@@ -12,18 +12,52 @@ def pick_color():
     if color[1]:
         color_code.set(color[1])
 
+def update_fields():
+    selected_type = qr_type.get()
+    url_label.pack_forget()
+    url_entry.pack_forget()
+    wifi_frame.pack_forget()
+    sms_frame.pack_forget()
+    text_frame.pack_forget()
+    if selected_type == "URL":
+        url_label.pack(pady=5)
+        url_entry.pack(pady=5)
+    elif selected_type == "WiFi":
+        wifi_frame.pack(pady=5)
+    elif selected_type == "SMS":
+        sms_frame.pack(pady=5)
+    elif selected_type == "Text":
+        text_frame.pack(pady=5)
+
 def generate_qr():
-    url = url_entry.get().strip()
     qr_color = color_code.get() or "black"
     qr_size = size_scale.get()
-    if url:
+    data = ""
+    selected_type = qr_type.get()
+    if selected_type == "URL":
+        data = url_entry.get().strip()
+    elif selected_type == "WiFi":
+        ssid = wifi_ssid_entry.get().strip()
+        password = wifi_password_entry.get().strip()
+        encryption = wifi_encryption_var.get()
+        if encryption == "No Encryption":
+            encryption = "nopass"
+        data = f"WIFI:T:{encryption};S:{ssid};P:{password};;"
+    elif selected_type == "SMS":
+        phone_number = sms_phone_entry.get().strip()
+        message = sms_message_entry.get().strip()
+        data = f"SMSTO:{phone_number}:{message}"
+    elif selected_type == "Text":
+        data = text_entry.get("1.0", tk.END).strip()
+
+    if data:
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_H,
             box_size=qr_size,
             border=4,
         )
-        qr.add_data(url)
+        qr.add_data(data)
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color=qr_color, back_color="white")
 
@@ -48,15 +82,52 @@ def scan_qr():
 # GUI setup
 root = ThemedTk(theme="arc")
 root.title("QR Code Generator & Scanner")
-root.geometry("700x500")
+root.geometry("800x600")
 
 title_label = ttk.Label(root, text="QR Code Generator & Scanner", font=("Arial", 24, "bold"), foreground="#4a90e2")
 title_label.pack(pady=20)
 
+qr_type = tk.StringVar()
+qr_type.set("URL")
+type_frame = ttk.LabelFrame(root, text="QR Code Type")
+type_frame.pack(pady=5)
+type_options = [("URL", "URL"), ("WiFi", "WiFi"), ("SMS", "SMS"), ("Text", "Text")]
+for text, value in type_options:
+    ttk.Radiobutton(type_frame, text=text, variable=qr_type, value=value, command=update_fields).pack(side=tk.LEFT, padx=10)
+
 url_label = ttk.Label(root, text="Please enter URL:", font=("Arial", 16))
-url_label.pack(pady=5)
 url_entry = ttk.Entry(root, width=60, font=("Arial", 14))
-url_entry.pack(pady=5)
+
+wifi_frame = ttk.LabelFrame(root, text="WiFi Connection")
+wifi_ssid_label = ttk.Label(wifi_frame, text="SSID:")
+wifi_ssid_entry = ttk.Entry(wifi_frame, font=("Arial", 14))
+wifi_password_label = ttk.Label(wifi_frame, text="Password:")
+wifi_password_entry = ttk.Entry(wifi_frame, font=("Arial", 14), show="*")
+wifi_encryption_var = tk.StringVar(value="WPA/WPA2")
+wifi_encryption_wpa = ttk.Radiobutton(wifi_frame, text="WPA/WPA2", variable=wifi_encryption_var, value="WPA/WPA2")
+wifi_encryption_wep = ttk.Radiobutton(wifi_frame, text="WEP", variable=wifi_encryption_var, value="WEP")
+wifi_encryption_none = ttk.Radiobutton(wifi_frame, text="No Encryption", variable=wifi_encryption_var, value="No Encryption")
+wifi_ssid_label.grid(row=0, column=0, padx=5, pady=5)
+wifi_ssid_entry.grid(row=0, column=1, padx=5, pady=5)
+wifi_password_label.grid(row=1, column=0, padx=5, pady=5)
+wifi_password_entry.grid(row=1, column=1, padx=5, pady=5)
+wifi_encryption_wpa.grid(row=2, column=0, padx=5, pady=5)
+wifi_encryption_wep.grid(row=2, column=1, padx=5, pady=5)
+wifi_encryption_none.grid(row=2, column=2, padx=5, pady=5)
+
+sms_frame = ttk.LabelFrame(root, text="SMS")
+sms_phone_label = ttk.Label(sms_frame, text="Phone Number:")
+sms_phone_entry = ttk.Entry(sms_frame, font=("Arial", 14))
+sms_message_label = ttk.Label(sms_frame, text="Message:")
+sms_message_entry = ttk.Entry(sms_frame, font=("Arial", 14))
+sms_phone_label.grid(row=0, column=0, padx=5, pady=5)
+sms_phone_entry.grid(row=0, column=1, padx=5, pady=5)
+sms_message_label.grid(row=1, column=0, padx=5, pady=5)
+sms_message_entry.grid(row=1, column=1, padx=5, pady=5)
+
+text_frame = ttk.LabelFrame(root, text="Plain Text")
+text_entry = tk.Text(text_frame, wrap=tk.WORD, font=("Arial", 14), width=50, height=4)
+text_entry.pack(padx=5, pady=5)
 
 color_code = tk.StringVar()
 pick_color_button = tk.Button(root, text="Choose QR Code Color", command=pick_color)
@@ -80,5 +151,7 @@ scan_button.grid(row=0, column=1, padx=10)
 
 result_text = tk.Text(root, height=6, wrap=tk.WORD, font=("Arial", 12))
 result_text.pack(pady=10, padx=20, fill=tk.BOTH)
+
+update_fields()  # Initialize fields based on the default selection
 
 root.mainloop()
