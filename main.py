@@ -15,11 +15,12 @@ def pick_color():
 def generate_qr():
     url = url_entry.get().strip()
     qr_color = color_code.get() or "black"
+    qr_size = size_scale.get()
     if url:
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_H,
-            box_size=10,
+            box_size=qr_size,
             border=4,
         )
         qr.add_data(url)
@@ -47,7 +48,7 @@ def scan_qr():
 # GUI setup
 root = ThemedTk(theme="arc")
 root.title("QR Code Generator & Scanner")
-root.geometry("700x450")
+root.geometry("700x500")
 
 title_label = ttk.Label(root, text="QR Code Generator & Scanner", font=("Arial", 24, "bold"), foreground="#4a90e2")
 title_label.pack(pady=20)
@@ -60,6 +61,10 @@ url_entry.pack(pady=5)
 color_code = tk.StringVar()
 pick_color_button = tk.Button(root, text="Choose QR Code Color", command=pick_color)
 pick_color_button.pack(pady=5)
+
+size_scale = tk.Scale(root, from_=1, to=20, orient=tk.HORIZONTAL, label="QR Code Size")
+size_scale.set(10)  # Default value
+size_scale.pack(pady=5)
 
 file_name_label = ttk.Label(root, text="Please enter custom file name:", font=("Arial", 16))
 file_name_label.pack(pady=5)
